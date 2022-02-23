@@ -1,8 +1,11 @@
 package com.example.airpollutionapp.screens.airpoll
 
 import android.app.Dialog
+import android.content.Context
+import android.content.Context.CONNECTIVITY_SERVICE
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
@@ -10,6 +13,8 @@ import android.view.*
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.*
+import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -23,6 +28,7 @@ import com.google.firebase.auth.FirebaseAuth
 import java.io.Serializable
 import java.text.SimpleDateFormat
 import java.util.*
+
 
 class AirPollutionFragment : Fragment() {
 
@@ -106,19 +112,31 @@ class AirPollutionFragment : Fragment() {
 
         mViewModel.getWindOfCity({
             //Log.i("wind_tag", "deg: speed:")
-               binding.tvWind.text = "Скорость ветра: ${WindInstance.speed} Направление(в градусах):${WindInstance.deg} ${getWindName()}"
+            binding.tvWind.text = "Скорость ветра: ${WindInstance.speed} Направление(в градусах):${WindInstance.deg} ${getWindName()}"
         },{})
 
         binding.spinnerComponent.adapter = adapterSpinner
-
         showProgressDialog("Loading data from URL....")
 
-        val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
 
+
+        if (isNetworkConnected()){
+            getDataWithInternet()
+        }else {
+
+        }
+
+
+
+
+    }
+
+    private fun getDataWithInternet(){
+        val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
         if (getInitData()== testDate){
             mViewModel.getAllStationsOpenWeather({
                 showToast("Get data from url api")
-                mViewModel.saveDataDB()
+                mViewModel.saveStationsAPI()
                 binding.spinnerComponent.apply {
                     onItemSelectedListener = spinnerListener
                     setSelection(adapterSpinner.count-1)
@@ -131,18 +149,18 @@ class AirPollutionFragment : Fragment() {
             if (checkTimeInPrefs(timeSavedDate!!)){
                 mViewModel.getAllStationsOpenWeather({
                     showToast("Get data from url api")
-                    mViewModel.saveDataDB()
+                    mViewModel.saveStationsAPI()
                     Handler().postDelayed({
                         binding.spinnerComponent.apply {
-                        onItemSelectedListener = spinnerListener
-                        setSelection(adapterSpinner.count-1)
-                    }},3000)
+                            onItemSelectedListener = spinnerListener
+                            setSelection(adapterSpinner.count-1)
+                        }},3000)
                     closeProgressDialog()
                 },{
                     showToast("Error get from URL response $it!")
                 })
             } else {
-                mViewModel.getAllStationsDbFire({
+                mViewModel.getAllStationsAPI({
                     showToast("Get data from firebase")
                     binding.spinnerComponent.apply {
                         onItemSelectedListener = spinnerListener
@@ -154,6 +172,11 @@ class AirPollutionFragment : Fragment() {
                 })
             }
         }
+    }
+
+    private fun isNetworkConnected(): Boolean {
+        val cm = APP_ACTIVITY.getSystemService(CONNECTIVITY_SERVICE) as ConnectivityManager?
+        return cm!!.activeNetworkInfo != null && cm.activeNetworkInfo!!.isConnected
     }
 
     private fun showPopupMenu() {
@@ -237,7 +260,7 @@ class AirPollutionFragment : Fragment() {
         val minutes = seconds / 60
         val hours = minutes / 60
         val days = hours / 24
-        return (days >= 0 && minutes >= 4 && hours >= 0 && seconds >= 0)
+        return (days >= 0 && minutes >= 0 && hours >= 0 && seconds >= 0)
     }
 
     private fun setFragment(fragment: Fragment) {

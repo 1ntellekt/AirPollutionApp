@@ -8,8 +8,11 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.android.volley.Request
 import com.android.volley.RequestQueue
+import com.android.volley.Response
+import com.android.volley.VolleyError
 import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.StringRequest
 import com.android.volley.toolbox.Volley
 import com.example.airpollutionapp.APP_ACTIVITY
 import com.example.airpollutionapp.datePattern
@@ -19,8 +22,8 @@ import com.example.airpollutionapp.setInitData
 import com.example.airpollutionapp.showToast
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -138,7 +141,7 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
         requestQueue.add(jsonObjectRequest)
     }
 
-    fun saveDataDB(){
+    fun saveDataDBFire(){
         viewModelScope.launch(Dispatchers.IO){
         stations.get().addOnSuccessListener { querySnapshot ->
                 querySnapshot.documents.forEach {
@@ -219,13 +222,107 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
         val jsonObjectRequest = JsonObjectRequest(Request.Method.GET, url,null, { response ->
 
           val statusRes =  response.getBoolean("status")
-          val message = response.getString("")
+          val message = response.getString("message")
+
+            if(statusRes){
+
+                listStationFromUrl.clear()
+
+                val jsonStationsArray = response.getJSONArray("stations")
+                for (i in 0 until jsonStationsArray.length()) {
+                    val jsonStation = jsonStationsArray.getJSONObject(i)
+                    val station = Station(
+                        id = jsonStation.getInt("id"),
+                        name = jsonStation.getString("name"),
+                        address = jsonStation.getString("address"),
+                        longitude = jsonStation.getDouble("longitude"),
+                        latitude = jsonStation.getDouble("latitude"),
+                        city = jsonStation.getString("city")
+                    ).also { st->
+                        st.apply {
+                            components["co"] = jsonStation.getDouble("co")
+                            components["no"] = jsonStation.getDouble("no")
+                            components["no2"] = jsonStation.getDouble("no2")
+                            components["so2"] = jsonStation.getDouble("so2")
+                            components["nh3"] = jsonStation.getDouble("nh3")
+                            components["pm10"] = jsonStation.getDouble("pm10")
+                            components["pm2.5"] = jsonStation.getDouble("pm2_5")
+                        }
+                    }
+                    listStationFromUrl.add(station)
+                }
+
+                if (listStationFromUrl.isNotEmpty()){
+                    stationLiveData.postValue(listStationFromUrl)
+                }
+
+                Log.i("tagAPI", message)
+                onSuccess()
+
+            }
 
         }, { error->
             Log.e("tagApi", error.message.toString())
+            stationLiveData.postValue(null)
             onFail(error.message.toString())
         })
         requestQueue.add(jsonObjectRequest)
+    }
+
+    fun saveStationsAPI(){
+        val url = "https://air-pollution-app-q1.herokuapp.com/allstations"
+        val stringRequest = StringRequest(Request.Method.DELETE, url, { response ->
+            val jsonObject = JSONObject(response)
+            val statusReq = jsonObject.getBoolean("status")
+
+            if (statusReq){
+                for (station in listStationFromUrl){
+                    addStationToAPI(station)
+                }
+            }
+
+        },{ error ->
+            Log.e("tagAPI","DELETE ALL Stations ${error.message.toString()}")
+           // onFail(error.message.toString())
+        })
+        requestQueue.add(stringRequest)
+    }
+
+    private fun addStationToAPI(station: Station){
+        val url = "https://air-pollution-app-q1.herokuapp.com/stations"
+
+        val params:MutableMap<String, String> = mutableMapOf()
+        params["name"] = station.name
+        params["address"] = station.address
+        params["city"] = station.city
+        params["latitude"] = station.latitude.toString()
+        params["longitude"] = station.longitude.toString()
+
+        params["co"] = station.components["co"].toString()
+        params["no"] = station.components["no"].toString()
+        params["no2"] = station.components["no2"].toString()
+        params["so2"] = station.components["so2"].toString()
+        params["nh3"] = station.components["nh3"].toString()
+        params["pm10"] = station.components["pm10"].toString()
+        params["pm2_5"] = station.components["pm2.5"].toString()
+
+
+        val stringRequest = object : StringRequest(Request.Method.POST, url, { response ->
+            val jsonObject = JSONObject(response)
+
+            if (jsonObject.getBoolean("status")){
+                val insertId = jsonObject.getInt("added_id")
+                Log.i("tagAPI", "GET on $insertId| $station")
+            }
+
+        }, {error ->
+            Log.e("tagAPI","ADD Station ${error.message.toString()}")
+        }){
+            override fun getParams(): MutableMap<String, String> {
+                return params
+            }
+        }
+        requestQueue.add(stringRequest)
     }
 
 }
