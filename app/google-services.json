@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "644628102565",
+    "project_id": "airpollutionapp-8e109",
+    "storage_bucket": "airpollutionapp-8e109.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:644628102565:android:e3d9cc50b9785bba087c4c",
+        "android_client_info": {
+          "package_name": "com.example.airpollutionapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "644628102565-h6hel98cgmcjdv07gon7933pdcer61v6.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSkMNl2ngGO9KKWTCayz6Q-Va8t-8rcYo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "644628102565-h6hel98cgmcjdv07gon7933pdcer61v6.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

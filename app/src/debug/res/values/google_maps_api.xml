@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+TODO: Before you run your application, you need a Google Maps API key.
+
+To get one, follow this link, follow the directions and press "Create" at the end:
+
+https://console.developers.google.com/flows/enableapi?apiid=maps_android_backend&keyType=CLIENT_SIDE_ANDROID&r=11:DD:98:4E:6F:CC:24:B2:8E:BB:35:38:94:54:F7:04:78:F3:C2:53%3Bcom.example.atmosapp
+
+You can also add your credentials to an existing key, using these values:
+
+Package name:
+com.example.airpollutionapp
+
+SHA-1 certificate fingerprint:
+00:A3:84:A9:67:6B:68:F5:BE:27:06:33:3D:1E:1A:10:10:9E:EA:94
+
+Alternatively, follow the directions here:
+https://developers.google.com/maps/documentation/android/start#get-key
+
+Once you have your key (it starts with "AIza"), replace the "google_maps_key"
+string in this file.
+-->
+    <string name="google_maps_key" templateMergeStrategy="preserve" translatable="false">AIzaSyCpkECAUswt4_k7a5JJBKj2GVGxJJHrLWo</string>
+</resources>

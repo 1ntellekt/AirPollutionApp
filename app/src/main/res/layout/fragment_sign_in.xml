@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".screens.signin.SignInFragment">
+
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_centerInParent="true"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <RelativeLayout
+                android:layout_gravity="center_horizontal"
+                android:background="@drawable/back_sign"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <EditText
+                android:id="@+id/edEmail"
+                android:background="@drawable/back_edit"
+                android:padding="9dp"
+                android:layout_marginTop="5dp"
+                android:inputType="textEmailAddress"
+                android:hint="Input email...."
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <EditText
+                android:id="@+id/edPassword"
+                android:background="@drawable/back_edit"
+                android:padding="9dp"
+                android:layout_marginTop="8dp"
+                android:inputType="textPassword"
+                android:hint="Input password...."
+                android:layout_marginStart="20dp"
+                android:layout_marginEnd="20dp"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnSignIn"
+                android:layout_marginTop="15dp"
+                android:layout_gravity="center_horizontal"
+                android:text="Sign In"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <TextView
+                android:layout_marginTop="10dp"
+                android:textColor="@color/purple_700"
+                android:layout_gravity="center_horizontal"
+                android:id="@+id/tvToggle"
+                android:padding="5dp"
+                android:clickable="true"
+                android:background="@drawable/back_edit"
+                android:text="У вас нет аккаунта?"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        </LinearLayout>
+
+    </RelativeLayout>
+
+
+</FrameLayout>

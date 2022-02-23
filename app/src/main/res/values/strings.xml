@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">AirPollutionApp</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="str_choose_title">Выберите компонент</string>
+
+    <string name="NO2">Газ характерного бурово цвета. Резкий удушливый запах.</string>
+    <string name="NO">Бесцветный, не имеющий запаха газ, плохо растворимый в воде</string>
+    <string name="CO">Бесцветный горючий ядовитый газ без вкуса и запаха.</string>
+    <string name="NH3">Бесцветный газ с резким запахом, хорошо растворяется в воде, спирте и ряде других органических растворителей.</string>
+    <string name="SO2">Бесцветный газ с характерным резким запахом, высокая токсичность.</string>
+    <string name="PM2.5">Смесь твердых микрочастиц и мельчайшие капельки жидкостей, находящихся в воздухе во взвешенном состоянии. Диаметром от 10 до 2.5мкм</string>
+    <string name="PM10">Смесь твердых микрочастиц и мельчайшие капельки жидкостей, находящихся в воздухе во взвешенном состоянии. Диаметром 2.5мкм и менее</string>
+
+</resources>
