@@ -1,6 +1,7 @@
 package com.example.airpollutionapp.screens.airpoll
 
 import android.app.Application
+import android.content.Context
 import android.os.Handler
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
@@ -8,8 +9,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.viewModelScope
 import com.android.volley.Request
 import com.android.volley.RequestQueue
-import com.android.volley.Response
-import com.android.volley.VolleyError
 import com.android.volley.toolbox.JsonArrayRequest
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.StringRequest
@@ -18,6 +17,8 @@ import com.example.airpollutionapp.APP_ACTIVITY
 import com.example.airpollutionapp.datePattern
 import com.example.airpollutionapp.models.Station
 import com.example.airpollutionapp.models.WindInstance
+import com.example.airpollutionapp.room.database.LocalDB
+import com.example.airpollutionapp.room.entity.StationEntity
 import com.example.airpollutionapp.setInitData
 import com.example.airpollutionapp.showToast
 import com.google.firebase.firestore.FirebaseFirestore
@@ -35,7 +36,7 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
     private val stations = mDatabase.collection("stations")
     private val listStationFromUrl = mutableListOf<Station>()
 
-     fun getAllStationsOpenWeather(onSuccess:()->Unit, onFail:(String)->Unit) {
+    fun getAllStationsOpenWeather(onSuccess:()->Unit, onFail:(String)->Unit) {
         val url = "http://atmosphera.kz:4004/stations"
          viewModelScope.launch(Dispatchers.IO){
              listStationFromUrl.clear()
@@ -277,9 +278,12 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
 
             if (statusReq){
                 for (station in listStationFromUrl){
-                    addStationToAPI(station)
+                    Handler().postDelayed({
+                        addStationToAPI(station)
+                    },200)
                 }
             }
+                 setInitData(SimpleDateFormat(datePattern, Locale.getDefault()).format(Date()))
 
         },{ error ->
             Log.e("tagAPI","DELETE ALL Stations ${error.message.toString()}")
@@ -306,7 +310,6 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
         params["pm10"] = station.components["pm10"].toString()
         params["pm2_5"] = station.components["pm2.5"].toString()
 
-
         val stringRequest = object : StringRequest(Request.Method.POST, url, { response ->
             val jsonObject = JSONObject(response)
 
@@ -323,6 +326,75 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
             }
         }
         requestQueue.add(stringRequest)
+    }
+
+    fun getStationLocalDB(onSuccess: () -> Unit) {
+
+        try {
+            viewModelScope.launch(Dispatchers.Default){
+                    listStationFromUrl.clear()
+                    val stations = mutableListOf<Station>()
+                    LocalDB.getDatabase(getApplication())?.stationDao()?.getAllStations()?.forEach { stationEntity ->
+                        val compMap = mutableMapOf<String, Double>()
+                        compMap["co"] = stationEntity.co
+                        compMap["no"] = stationEntity.no
+                        compMap["no2"] = stationEntity.no2
+                        compMap["so2"] = stationEntity.so2
+                        compMap["nh3"] = stationEntity.nh3
+                        compMap["pm10"] = stationEntity.pm10
+                        compMap["pm2.5"] = stationEntity.pm25
+                        val station = Station(
+                            name = stationEntity.name,
+                            address = stationEntity.address,
+                            city = stationEntity.city,
+                            longitude = stationEntity.longitude,
+                            latitude = stationEntity.latitude,
+                            components = compMap
+                        )
+                        stations.add(station)
+                    }
+                    Log.i("tagLocal", "size list from db: ${stations.size}")
+                    if (stations.isNotEmpty()) {
+                        listStationFromUrl.addAll(stations)
+                        stationLiveData.postValue(listStationFromUrl)
+                    }
+
+                    viewModelScope.launch(Dispatchers.Main){
+                        onSuccess()
+                    }
+            }
+        } catch (e:Exception){
+            Log.e("tagE", "error: ${e.message.toString()}")
+        }
+
+
+    }
+
+    fun saveStationsToLocalDB() {
+        viewModelScope.launch(Dispatchers.Default){
+
+        try{
+            LocalDB.getDatabase(getApplication())?.stationDao()?.deleteAllStations()
+                listStationFromUrl.forEach { station ->
+
+                    val stationEntity = StationEntity(name = station.name, longitude = station.longitude,
+                        latitude = station.latitude, address = station.address, city = station.city,
+                        co = station.components["co"]!!, no = station.components["no"]!!, no2 = station.components["no2"]!!, so2 = station.components["so2"]!!,
+                        pm25 = station.components["pm2.5"]!!, pm10 = station.components["pm10"]!!, nh3 = station.components["nh3"]!!)
+
+                        LocalDB.getDatabase(APP_ACTIVITY)?.stationDao()?.addStation(stationEntity)
+                }
+
+                Log.i("tagL", "local size list : ${LocalDB.getDatabase(APP_ACTIVITY)?.stationDao()?.getAllStations()?.size}")
+                //setInitData(SimpleDateFormat(datePattern, Locale.getDefault()).format(Date()))
+
+        }catch (e:Exception){
+            //e.printStackTrace()
+            Log.e("tagL", "error: ${e.message.toString()}")
+        }
+
+
+        }
     }
 
 }

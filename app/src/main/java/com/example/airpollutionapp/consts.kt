@@ -17,6 +17,7 @@ fun showToast(msg:String){
     Toast.makeText(APP_ACTIVITY,msg,Toast.LENGTH_SHORT).show()
 }
 
+
 fun getUserInitBool():Boolean{
     return APP_ACTIVITY.getSharedPreferences("user",MODE_PRIVATE).getBoolean("init_user",false)
 }
@@ -26,6 +27,20 @@ fun setUserInitBool(init:Boolean) {
     editPref.putBoolean("init_user",init)
     editPref.apply()
 }
+
+fun setWindPref(){
+    val editPref = APP_ACTIVITY.getSharedPreferences("wind", MODE_PRIVATE).edit()
+    editPref.putFloat("speed", WindInstance.speed.toFloat())
+    editPref.putFloat("deg", WindInstance.deg.toFloat())
+    editPref.apply()
+}
+
+fun initWindByPref() {
+    val prefs = APP_ACTIVITY.getSharedPreferences("wind", MODE_PRIVATE)
+    WindInstance.speed = prefs.getFloat("speed",0.0f).toInt()
+    WindInstance.deg = prefs.getFloat("deg",0.0f).toInt()
+}
+
 
 fun showProgressDialog(title:String){
     progressDialog.setTitle(title)
@@ -37,6 +52,7 @@ fun closeProgressDialog(){
         progressDialog.dismiss()
 }
 
+
 fun getInitData(): String? {
     return APP_ACTIVITY.getSharedPreferences("data", MODE_PRIVATE).getString("timeInit", testDate)
 }
@@ -46,6 +62,7 @@ fun setInitData(time:String){
     edit.putString("timeInit",time)
     edit.apply()
 }
+
 
  fun getColorOfPollution(mapComponents:MutableMap<String,Double>) :MutableMap<String,String> {
 

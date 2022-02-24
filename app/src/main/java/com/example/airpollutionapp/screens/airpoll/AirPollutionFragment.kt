@@ -24,6 +24,7 @@ import com.example.airpollutionapp.*
 import com.example.airpollutionapp.databinding.FragmentAirPollutionBinding
 import com.example.airpollutionapp.models.Station
 import com.example.airpollutionapp.models.WindInstance
+import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.FirebaseAuth
 import java.io.Serializable
 import java.text.SimpleDateFormat
@@ -98,14 +99,24 @@ class AirPollutionFragment : Fragment() {
     override fun onStart() {
         super.onStart()
 
-        binding.btnExit.setOnClickListener {
-            setUserInitBool(false)
-            FirebaseAuth.getInstance().signOut()
-            APP_ACTIVITY.mNavController.navigate(R.id.action_airPollutionFragment_to_signInFragment)
-        }
+        binding.apply {
 
-        binding.btnWindChange.setOnClickListener {
-            showPopupMenu()
+            btnExit.setOnClickListener {
+                setUserInitBool(false)
+                FirebaseAuth.getInstance().signOut()
+                APP_ACTIVITY.mNavController.navigate(R.id.action_airPollutionFragment_to_signInFragment)
+            }
+
+            btnDownload.setOnClickListener {
+                mViewModel.saveStationsToLocalDB()
+                setWindPref()
+            }
+
+            btnWindChange.setOnClickListener {
+                showPopupMenu()
+            }
+
+            spinnerComponent.adapter = adapterSpinner
         }
 
         mViewModel.stationLiveData.observe(this,mObserver)
@@ -115,27 +126,42 @@ class AirPollutionFragment : Fragment() {
             binding.tvWind.text = "Скорость ветра: ${WindInstance.speed} Направление(в градусах):${WindInstance.deg} ${getWindName()}"
         },{})
 
-        binding.spinnerComponent.adapter = adapterSpinner
         showProgressDialog("Loading data from URL....")
-
-
 
         if (isNetworkConnected()){
             getDataWithInternet()
-        }else {
-
+        } else {
+            getDataWithLocal()
         }
 
+    }
 
-
-
+    private fun getDataWithLocal() {
+        initWindByPref()
+        binding.tvWind.text = "Скорость ветра: ${WindInstance.speed} Направление(в градусах):${WindInstance.deg} ${getWindName()}"
+        mViewModel.getStationLocalDB {
+            try {
+                showToast("Get data from local db")
+                if (listStationFromUrl.isEmpty()){
+                    Snackbar.make(APP_ACTIVITY.findViewById(android.R.id.content),"Local DB is empty!", Snackbar.LENGTH_INDEFINITE).show()
+                } else {
+                    binding.spinnerComponent.apply {
+                         onItemSelectedListener = spinnerListener
+                         setSelection(adapterSpinner.count-1)
+                    }
+                }
+                closeProgressDialog()
+            } catch (e:Exception) {
+                Log.e("tag", "error ${e.message.toString()}")
+            }
+        }
     }
 
     private fun getDataWithInternet(){
         val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
         if (getInitData()== testDate){
             mViewModel.getAllStationsOpenWeather({
-                showToast("Get data from url api")
+                showToast("Get data from openweather")
                 mViewModel.saveStationsAPI()
                 binding.spinnerComponent.apply {
                     onItemSelectedListener = spinnerListener
@@ -148,7 +174,7 @@ class AirPollutionFragment : Fragment() {
         } else {
             if (checkTimeInPrefs(timeSavedDate!!)){
                 mViewModel.getAllStationsOpenWeather({
-                    showToast("Get data from url api")
+                    showToast("Get data from openweather")
                     mViewModel.saveStationsAPI()
                     Handler().postDelayed({
                         binding.spinnerComponent.apply {
@@ -161,7 +187,7 @@ class AirPollutionFragment : Fragment() {
                 })
             } else {
                 mViewModel.getAllStationsAPI({
-                    showToast("Get data from firebase")
+                    showToast("Get data from api")
                     binding.spinnerComponent.apply {
                         onItemSelectedListener = spinnerListener
                         setSelection(adapterSpinner.count-1)
@@ -260,7 +286,7 @@ class AirPollutionFragment : Fragment() {
         val minutes = seconds / 60
         val hours = minutes / 60
         val days = hours / 24
-        return (days >= 0 && minutes >= 0 && hours >= 0 && seconds >= 0)
+        return (days >= 0 && minutes >= 4 && hours >= 0 && seconds >= 0)
     }
 
     private fun setFragment(fragment: Fragment) {
