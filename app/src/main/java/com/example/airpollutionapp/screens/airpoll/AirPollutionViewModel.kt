@@ -277,12 +277,13 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
             val statusReq = jsonObject.getBoolean("status")
 
             if (statusReq){
-                for (station in listStationFromUrl){
+                for (i in 0 until listStationFromUrl.size){
                     Handler().postDelayed({
-                        addStationToAPI(station)
+                        addStationToAPI(i,listStationFromUrl[i])
                     },200)
                 }
             }
+
                  setInitData(SimpleDateFormat(datePattern, Locale.getDefault()).format(Date()))
 
         },{ error ->
@@ -292,7 +293,7 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
         requestQueue.add(stringRequest)
     }
 
-    private fun addStationToAPI(station: Station){
+    private fun addStationToAPI(ind:Int , station: Station){
         val url = "https://air-pollution-app-q1.herokuapp.com/stations"
 
         val params:MutableMap<String, String> = mutableMapOf()
@@ -315,6 +316,11 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
 
             if (jsonObject.getBoolean("status")){
                 val insertId = jsonObject.getInt("added_id")
+                listStationFromUrl.set(ind,station.copy(id = insertId))
+                if (listStationFromUrl.isNotEmpty()){
+                    Log.i("tagSt", "${listStationFromUrl[ind]}")
+                    stationLiveData.postValue(listStationFromUrl)
+                }
                 Log.i("tagAPI", "GET on $insertId| $station")
             }
 

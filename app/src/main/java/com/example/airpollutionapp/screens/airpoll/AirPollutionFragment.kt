@@ -77,8 +77,6 @@ class AirPollutionFragment : Fragment() {
         return binding.root
     }
 
-    private var firstDelay = 3000
-
     private val spinnerListener = object : AdapterView.OnItemSelectedListener {
         override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
             val str = binding.spinnerComponent.selectedItem.toString().substringBefore(" -")
@@ -105,6 +103,12 @@ class AirPollutionFragment : Fragment() {
                 setUserInitBool(false)
                 FirebaseAuth.getInstance().signOut()
                 APP_ACTIVITY.mNavController.navigate(R.id.action_airPollutionFragment_to_signInFragment)
+
+                /*listStationFromUrl.forEach {
+                    Log.i("tagSt", "st: $it")
+                }*/
+
+
             }
 
             btnDownload.setOnClickListener {
@@ -128,7 +132,7 @@ class AirPollutionFragment : Fragment() {
 
         showProgressDialog("Loading data from URL....")
 
-        if (isNetworkConnected()){
+        if (isNetworkConnected()) {
             getDataWithInternet()
         } else {
             getDataWithLocal()
@@ -293,80 +297,6 @@ class AirPollutionFragment : Fragment() {
         val fragTransaction = parentFragmentManager.beginTransaction()
         fragTransaction.replace(R.id.frameLayout,fragment).commit()
     }
-
-/*    private fun getAllStations() {
-        val URL_API = "http://atmosphera.kz:4004/stations"
-        val jsonObjectRequest = JsonArrayRequest(Request.Method.GET,URL_API,null,{ jsonArray->
-
-            var k = 0
-
-            for (i in 0 until jsonArray.length()) {
-                val jsonObject = jsonArray.getJSONObject(i)
-
-                val station = Station(
-                    name = jsonObject.getString("nameRu"),
-                    longitude = jsonObject.getDouble("longitude"),
-                    latitude = jsonObject.getDouble("latitude"),
-                    address = jsonObject.getString("addressRu"),
-                    city = jsonObject.getString("cityEn")
-                )
-
-                if(station.city == "Ust-Kamenogorsk") {
-                    listStationFromUrl.add(station)
-                    getComponents(k,station)
-                    k++
-                }
-
-            }
-            if (progressDialog.isShowing){
-                progressDialog.dismiss()
-            }
-
-            Log.i("tag","size: ${listStationFromUrl.size}")
-
-        }, { error->
-            Log.e("tag","${error.message}")
-            showToast("Error get from URL response {Stations}!")
-        })
-
-        requestQueue.add(jsonObjectRequest)
-    }
-
-    //http://api.openweathermap.org/data/2.5/air_pollution/forecast?lat=49.94481805555555&lon=82.65334027777779&appid=e3fc044955e04204c19ed28f90ea68cf
-
-   private fun getComponents(i:Int, station: Station){
-        val lat = station.latitude
-        val lon = station.longitude
-        val apiKey = "e3fc044955e04204c19ed28f90ea68cf"
-        val url = "http://api.openweathermap.org/data/2.5/air_pollution/forecast?lat=$lat&lon=$lon&appid=$apiKey"
-
-        val jsonObjectRequest = JsonObjectRequest(Request.Method.GET,url,null,{ jsonObj->
-
-            val jsonArrayList = jsonObj.getJSONArray("list")
-
-            val jsonObjCompFirst = jsonArrayList.getJSONObject(0)
-            val jsonComp = jsonObjCompFirst.getJSONObject("components")
-
-            listStationFromUrl[i].apply {
-                components["co"] = jsonComp.getInt("co")// оксид углерода
-                components["no"] = jsonComp.getInt("no")// оксид азота
-                components["no2"] = jsonComp.getInt("no2")// диоксид азота
-                components["so2"] = jsonComp.getInt("so2")// диоксид серы
-                components["pm2.5"] = jsonComp.getInt("pm2_5")// взвешенные частицы pm2.5
-                components["pm10"] = jsonComp.getInt("pm10") // взвешенные частицы pm10
-                components["nh3"] = jsonComp.getInt("nh3") // аммиак
-            }
-
-            Log.i("tag","$i: ${listStationFromUrl[i]}")
-            //getColorOfPollution(listStationFromUrl[i].components)
-
-        }, { error->
-            Log.e("tag","${error.message}")
-            showToast("Error get from URL response {Components Air}!")
-        })
-
-        requestQueue.add(jsonObjectRequest)
-    }*/
 
     override fun onDestroyView() {
         super.onDestroyView()
