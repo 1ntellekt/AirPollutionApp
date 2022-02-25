@@ -403,4 +403,33 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
         }
     }
 
+    fun getDistanceFromAPI(isKM:Boolean,station1: Station, station2: Station,onSuccess: (Double) -> Unit, onFail: (String) -> Unit){
+
+        val params  = mutableMapOf<String, String>()
+        params["lat1"] = station1.latitude.toString()
+        params["lng1"] = station1.longitude.toString()
+        params["lat2"] = station2.latitude.toString()
+        params["lng2"] = station2.longitude.toString()
+
+        if (isKM){
+            params["unit"] = "km"
+        }
+
+        val url = "https://air-pollution-app-q1.herokuapp.com/distance"
+        val stringRequest = object : StringRequest(Request.Method.POST, url,  {
+
+             val jsonObject = JSONObject(it)
+            onSuccess(jsonObject.getDouble("distance"))
+
+        }, {
+            Log.e("tagD", "error post distance: ${it.message.toString()}")
+            onFail(it.message.toString())
+        }) {
+            override fun getParams(): MutableMap<String, String>? {
+                return params
+            }
+        }
+        requestQueue.add(stringRequest)
+    }
+
 }

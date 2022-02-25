@@ -1,12 +1,16 @@
 package com.example.airpollutionapp
 
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.airpollutionapp.models.Station
 import com.example.airpollutionapp.models.WindInstance
@@ -55,10 +59,12 @@ class MapsFragment : Fragment() {
             else googleMap.addPolygon(drawEllipse(point,station))
         }
 
-       // val station = listStations[0]
-       // val  point = LatLng(station.latitude, station.longitude)
+        //48.6130209,81.7489928 center east kazakhstan
 
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat,lon),10.0f))
+        val latLngBounds = LatLngBounds(LatLng(45.321254,76.245117), LatLng(52.038977,85.979004))
+
+        googleMap.setLatLngBoundsForCameraTarget(latLngBounds)
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat,lon),9.0f))
 
     }
 

@@ -13,6 +13,7 @@ import android.view.*
 import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.*
+import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
@@ -103,12 +104,9 @@ class AirPollutionFragment : Fragment() {
                 setUserInitBool(false)
                 FirebaseAuth.getInstance().signOut()
                 APP_ACTIVITY.mNavController.navigate(R.id.action_airPollutionFragment_to_signInFragment)
-
                 /*listStationFromUrl.forEach {
                     Log.i("tagSt", "st: $it")
                 }*/
-
-
             }
 
             btnDownload.setOnClickListener {
@@ -116,7 +114,7 @@ class AirPollutionFragment : Fragment() {
                 setWindPref()
             }
 
-            btnWindChange.setOnClickListener {
+            btnPopupMenu.setOnClickListener {
                 showPopupMenu()
             }
 
@@ -210,7 +208,7 @@ class AirPollutionFragment : Fragment() {
     }
 
     private fun showPopupMenu() {
-        val popupMenu = PopupMenu(context,binding.btnWindChange)
+        val popupMenu = PopupMenu(context,binding.btnPopupMenu)
         popupMenu.inflate(R.menu.layout_popup_menu)
         popupMenu.setOnMenuItemClickListener { item -> popupMenuItemClicked(item) }
         popupMenu.show()
@@ -224,43 +222,117 @@ class AirPollutionFragment : Fragment() {
             R.id.idMenuSpeedDeg -> {
                 showBottomDialog(2)
             }
+            R.id.idDistanceStations -> {
+                showTopDialog()
+            }
         }
         return true
     }
 
     private fun showBottomDialog(typeEdit: Int) {
-        val dialog = Dialog(APP_ACTIVITY)
-        dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
-        dialog.setContentView(R.layout.bottom_sheet_layout)
+        val dialog = context?.let { Dialog(it) }
+        dialog?.let {
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            dialog.setContentView(R.layout.bottom_sheet_layout)
 
-        val edSpeed = dialog.findViewById<EditText>(R.id.edSpeed)
-        val edDegree = dialog.findViewById<EditText>(R.id.edDegree)
-        val btnOkChange = dialog.findViewById<Button>(R.id.btnOkChange)
+            val edSpeed = dialog.findViewById<EditText>(R.id.edSpeed)
+            val edDegree = dialog.findViewById<EditText>(R.id.edDegree)
+            val btnOkChange = dialog.findViewById<Button>(R.id.btnOkChange)
 
-        if (typeEdit == 1) {
-            edDegree.visibility = View.GONE
-            btnOkChange.setOnClickListener {
-                if (edSpeed.text.toString().isNotEmpty()){
-                    WindInstance.speed = edSpeed.text.toString().toInt()
-                    updateUIWindow()
+            if (typeEdit == 1) {
+                edDegree.visibility = View.GONE
+                btnOkChange.setOnClickListener {
+                    if (edSpeed.text.toString().isNotEmpty()){
+                        WindInstance.speed = edSpeed.text.toString().toInt()
+                        updateUIWindow()
+                    }
+                    dialog.dismiss()
                 }
-                dialog.dismiss()
-            }
-        } else {
-            edSpeed.visibility = View.GONE
-            btnOkChange.setOnClickListener {
-                if (edDegree.text.toString().isNotEmpty()){
-                    WindInstance.deg = edDegree.text.toString().toInt()
-                    updateUIWindow()
+            } else {
+                edSpeed.visibility = View.GONE
+                btnOkChange.setOnClickListener {
+                    if (edDegree.text.toString().isNotEmpty()){
+                        WindInstance.deg = edDegree.text.toString().toInt()
+                        updateUIWindow()
+                    }
+                    dialog.dismiss()
                 }
-                dialog.dismiss()
             }
+            dialog.show()
+            dialog.window?.setLayout(MATCH_PARENT, WRAP_CONTENT)
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+            dialog.window?.setGravity(Gravity.BOTTOM)
         }
-        dialog.show()
-        dialog.window?.setLayout(MATCH_PARENT, WRAP_CONTENT)
-        dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-        dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
-        dialog.window?.setGravity(Gravity.BOTTOM)
+    }
+
+    private fun showTopDialog(){
+        val dialog = context?.let { Dialog(it) }
+
+        dialog?.let {
+            dialog.requestWindowFeature(Window.FEATURE_NO_TITLE)
+            dialog.setContentView(R.layout.top_sheet_layout)
+            val spStation1  = dialog.findViewById<Spinner>(R.id.spStation1)
+            val spStation2  = dialog.findViewById<Spinner>(R.id.spStation2)
+            val tvRez = dialog.findViewById<TextView>(R.id.tvRezDistance)
+            val switch = dialog.findViewById<SwitchCompat>(R.id.swKm)
+            val btnDistance = dialog.findViewById<Button>(R.id.btnDistance)
+
+            val arrayAdapter = ArrayAdapter(requireContext(),android.R.layout.simple_spinner_item,listStationFromUrl.map { "${it.name} ${it.address}" })
+            arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+
+            spStation1.adapter = arrayAdapter
+            spStation2.adapter = arrayAdapter
+
+            var station1: Station? = null
+            var station2: Station? = null
+
+            val listener1 = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    station1 = listStationFromUrl[position]
+                    //Log.i("tagSP", "spinner 1: ${station1.toString()}")
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                    TODO("Not yet implemented")
+                }
+            }
+
+            val listener2 = object : AdapterView.OnItemSelectedListener {
+                override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                    station2 = listStationFromUrl[position]
+                    //Log.i("tagSP", "spinner 2: ${station2.toString()}")
+                }
+                override fun onNothingSelected(parent: AdapterView<*>?) {
+                    TODO("Not yet implemented")
+                }
+            }
+
+            spStation1.onItemSelectedListener = listener1
+            spStation2.onItemSelectedListener = listener2
+
+            btnDistance.setOnClickListener {
+                if (station1 != null && station2 != null){
+                    if (station1!!.id != station2!!.id){
+                       // Log.i("tagSP", "btn click popup menu: ${station1.toString()} || ${station2.toString()}")
+                        mViewModel.getDistanceFromAPI(switch.isChecked, station1!!, station2!!, {
+                            tvRez.visibility = View.VISIBLE
+                            if (switch.isChecked)
+                            tvRez.text = "Итоговая дистанция: $it (km)"
+                            else tvRez.text = "Итоговая дистанция: $it (meters)"
+                        }, {
+                            showToast(it)
+                        })
+                    }
+                }
+            }
+
+            dialog.show()
+            dialog.window?.setLayout(MATCH_PARENT, WRAP_CONTENT)
+            dialog.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            dialog.window?.attributes?.windowAnimations = R.style.DialogAnimation
+            dialog.window?.setGravity(Gravity.TOP)
+        }
+
     }
 
     private fun updateUIWindow(){
