@@ -97,7 +97,6 @@ class AirPollutionFragment : Fragment() {
 
     override fun onStart() {
         super.onStart()
-
         binding.apply {
 
             btnExit.setOnClickListener {
@@ -135,7 +134,6 @@ class AirPollutionFragment : Fragment() {
         } else {
             getDataWithLocal()
         }
-
     }
 
     private fun getDataWithLocal() {
@@ -160,7 +158,7 @@ class AirPollutionFragment : Fragment() {
     }
 
     private fun getDataWithInternet(){
-        val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
+/*        val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
         if (getInitData()== testDate){
             mViewModel.getAllStationsOpenWeather({
                 showToast("Get data from openweather")
@@ -187,7 +185,7 @@ class AirPollutionFragment : Fragment() {
                 },{
                     showToast("Error get from URL response $it!")
                 })
-            } else {
+            } else {*/
                 mViewModel.getAllStationsAPI({
                     showToast("Get data from api")
                     binding.spinnerComponent.apply {
@@ -198,8 +196,8 @@ class AirPollutionFragment : Fragment() {
                 },{
                     showToast("Error get from DB Firebase $it!")
                 })
-            }
-        }
+           // }
+       // }
     }
 
     private fun isNetworkConnected(): Boolean {
@@ -362,7 +360,7 @@ class AirPollutionFragment : Fragment() {
         val minutes = seconds / 60
         val hours = minutes / 60
         val days = hours / 24
-        return (days >= 0 && minutes >= 4 && hours >= 0 && seconds >= 0)
+        return (days >= 1 && minutes >= 4 && hours >= 0 && seconds >= 0)
     }
 
     private fun setFragment(fragment: Fragment) {

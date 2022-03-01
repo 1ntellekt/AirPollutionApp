@@ -373,7 +373,6 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
             Log.e("tagE", "error: ${e.message.toString()}")
         }
 
-
     }
 
     fun saveStationsToLocalDB() {

@@ -2,9 +2,11 @@ package com.example.airpollutionapp
 
 import android.app.ProgressDialog
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import androidx.navigation.Navigation
@@ -24,11 +26,13 @@ class MainActivity : AppCompatActivity() {
         progressDialog = ProgressDialog(APP_ACTIVITY)
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     override fun onStart() {
         super.onStart()
         checkLocationPermission()
     }
 
+    @RequiresApi(Build.VERSION_CODES.M)
     private fun checkLocationPermission(){
         when {
             ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED -> {

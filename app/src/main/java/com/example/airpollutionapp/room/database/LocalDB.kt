@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 import com.example.airpollutionapp.room.dao.StationDao
 import com.example.airpollutionapp.room.entity.StationEntity
 
-@Database(entities = [StationEntity::class], version = 4)
+@Database(entities = [StationEntity::class], version = 6)
 abstract class LocalDB:RoomDatabase() {
 
     companion object {

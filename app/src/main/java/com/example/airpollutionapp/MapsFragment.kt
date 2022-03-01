@@ -1,16 +1,12 @@
 package com.example.airpollutionapp
 
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.example.airpollutionapp.models.Station
 import com.example.airpollutionapp.models.WindInstance
@@ -19,6 +15,9 @@ import com.google.android.gms.maps.GoogleMap
 import com.google.android.gms.maps.OnMapReadyCallback
 import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.*
+import com.google.maps.android.collections.CircleManager
+import com.google.maps.android.collections.MarkerManager
+import com.google.maps.android.collections.PolygonManager
 import com.google.maps.android.data.geojson.GeoJsonLayer
 import com.google.maps.android.ui.IconGenerator
 import org.json.JSONException
@@ -43,29 +42,85 @@ class MapsFragment : Fragment() {
             drawPolygonOfArea(googleMap, area)
         }
 
-        var lat = 0.0
-        var lon = 0.0
+        val centerLatLng = LatLng(48.6130209,81.7489928)
+
+        val markerManager = MarkerManager(googleMap)
+        val circleManager = CircleManager(googleMap)
+        val polygonManager = PolygonManager(googleMap)
+
+        markerManager.newCollection("marks")
+        circleManager.newCollection("circle")
+        polygonManager.newCollection("poly")
+
+        val listStationOnMap = mutableListOf<StationOnMap>()
 
         for (station in listStations) {
-           val  point = LatLng(station.latitude, station.longitude)
-            lat = station.latitude
-            lon = station.longitude
-            googleMap.addMarker(MarkerOptions().position(point).title(
-                "${station.name} (${station.address}) "+"${componentKey?.uppercase(Locale.getDefault())}:${station.components[componentKey]}"
-                //"${station.components}"
-            ))
-
-            if (WindInstance.speed <= 2) googleMap.addCircle(drawCircle(point,station))
-            else googleMap.addPolygon(drawEllipse(point,station))
+            listStationOnMap.add(StationOnMap(station))
         }
 
-        //48.6130209,81.7489928 center east kazakhstan
+        googleMap.setOnCameraMoveListener {
+            //Log.i("tagC", "Camera move: ${googleMap.projection.visibleRegion.latLngBounds}")
+           // Handler().postDelayed({
+                googleMap.projection.visibleRegion.apply {
+                    val polygonOptCamera = PolygonOptions().addAll(listOf(nearLeft, nearRight, farRight, farLeft))
+                    // Handler().postDelayed({
+                    for (stationOnMap in listStationOnMap) {
+                        val currStation = stationOnMap.station
+                        val latLngCenter = LatLng(currStation.latitude, currStation.longitude)
+
+                        if (!containsPointOnCamera(latLngCenter, polygonOptCamera.points)){
+                            //delete
+                            if (stationOnMap.status == "add"){
+                                stationOnMap.apply {
+                                    markerManager.getCollection("marks").remove(marker)
+                                    circle?.let { circleManager.getCollection("circle").remove(it)}
+                                    polygon?.let { polygonManager.getCollection("poly").remove(it)}
+                                    stationOnMap.status = "del"
+                                }
+                            }
+                        } else {
+                            //add
+                            if (stationOnMap.status == "no-add" || stationOnMap.status == "del"){
+
+                                val markerOpt = MarkerOptions().position(latLngCenter)
+                                    .title("${currStation.name} (${currStation.address}) "+
+                                            "${componentKey?.uppercase(Locale.getDefault())}:${currStation.components[componentKey]}")
+                                stationOnMap.marker = markerManager.getCollection("marks").addMarker(markerOpt)
+
+                                stationOnMap.status = "add"
+
+                                if (WindInstance.speed <= 2) {
+                                    val circleOpt = drawCircle(latLngCenter,currStation)
+                                   stationOnMap.circle = circleManager.getCollection("circle").addCircle(circleOpt)
+                                }
+                                else {
+                                    val polyOpt = drawEllipse(latLngCenter,currStation)
+                                  stationOnMap.polygon = polygonManager.getCollection("poly").addPolygon(polyOpt)
+                                }
+
+                            }
+                        }
+                    }
+
+                    markerManager.getCollection("marks").showAll()
+                    circleManager.getCollection("circle").showAll()
+                    polygonManager.getCollection("poly").showAll()
+                    // }, 1000)
+                }
+           // }, 3500)
+        }
 
         val latLngBounds = LatLngBounds(LatLng(45.321254,76.245117), LatLng(52.038977,85.979004))
-
         googleMap.setLatLngBoundsForCameraTarget(latLngBounds)
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(lat,lon),9.0f))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centerLatLng,7.0f))
+    }
 
+    private fun containsPointOnCamera(p: LatLng, points: List<LatLng>): Boolean {
+        val latLngBounds = LatLngBounds.Builder()
+        for (point in points){
+            latLngBounds.include(point)
+        }
+        return latLngBounds.build().contains(p)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -310,5 +365,12 @@ class MapsFragment : Fragment() {
         return options.strokeWidth(0f)
     }
 
+   data class StationOnMap(
+       val station: Station,
+       var status:String="no-add",
+       var marker: Marker?=null,
+       var polygon: Polygon?=null,
+       var circle: Circle?=null
+   )
 
-    }
+}
