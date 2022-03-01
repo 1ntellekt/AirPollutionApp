@@ -196,8 +196,8 @@ class AirPollutionFragment : Fragment() {
                 },{
                     showToast("Error get from DB Firebase $it!")
                 })
-           // }
-       // }
+         /*  }
+        }*/
     }
 
     private fun isNetworkConnected(): Boolean {

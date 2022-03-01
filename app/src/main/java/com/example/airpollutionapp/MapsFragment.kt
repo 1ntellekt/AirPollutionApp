@@ -365,7 +365,7 @@ class MapsFragment : Fragment() {
         return options.strokeWidth(0f)
     }
 
-   data class StationOnMap(
+   private data class StationOnMap(
        val station: Station,
        var status:String="no-add",
        var marker: Marker?=null,
