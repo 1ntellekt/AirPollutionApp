@@ -79,18 +79,6 @@
                 android:background="@color/white"
                 android:src="@drawable/ic_baseline_more_vert_24" />
 
-            <androidx.appcompat.widget.AppCompatButton
-                android:id="@+id/btnDownload"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_margin="3dp"
-                android:drawableStart="@drawable/ic_baseline_cloud_download_24"
-                android:text="Download data to local storage"
-                android:textAlignment="textEnd"
-                android:textAllCaps="false"
-                tools:ignore="RtlCompat" />
-
         </LinearLayout>
 
         <ProgressBar

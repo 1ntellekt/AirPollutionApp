@@ -108,11 +108,6 @@ class AirPollutionFragment : Fragment() {
                 }*/
             }
 
-            btnDownload.setOnClickListener {
-                mViewModel.saveStationsToLocalDB()
-                setWindPref()
-            }
-
             btnPopupMenu.setOnClickListener {
                 showPopupMenu()
             }
@@ -222,6 +217,10 @@ class AirPollutionFragment : Fragment() {
             }
             R.id.idDistanceStations -> {
                 showTopDialog()
+            }
+            R.id.idSave -> {
+                mViewModel.saveStationsToLocalDB()
+                setWindPref()
             }
         }
         return true
@@ -360,7 +359,7 @@ class AirPollutionFragment : Fragment() {
         val minutes = seconds / 60
         val hours = minutes / 60
         val days = hours / 24
-        return (days >= 1 && minutes >= 4 && hours >= 0 && seconds >= 0)
+        return (days >= 0 && minutes >= 0 && hours >= 0 && seconds >= 0)
     }
 
     private fun setFragment(fragment: Fragment) {

@@ -100,8 +100,6 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
                  longitude = 82.6327498686513, address = "ул. Примыкание, 1" , city = "Ust-Kamenogorsk")
              getComponents(keramFactory)
 
-
-
              onSuccess()*/
 
          }
@@ -133,6 +131,7 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
             listStationFromUrl.add(station)
 
             if(station.components.isNotEmpty()){
+                Log.i("tagS","${listStationFromUrl.size} : ${station.city}")
                 stationLiveData.postValue(listStationFromUrl)
             }
 
@@ -285,7 +284,7 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
                 for (i in 0 until listStationFromUrl.size){
                     Handler().postDelayed({
                         addStationToAPI(i,listStationFromUrl[i])
-                    },200)
+                    },350)
                 }
             }
 

@@ -4,5 +4,6 @@
     <item android:id="@+id/idMenuSpeed" android:title="Изменить силу ветра"/>
     <item android:id="@+id/idMenuSpeedDeg" android:title="Изменить направление"/>
     <item android:id="@+id/idDistanceStations" android:title="Расстояние между станциями"/>
+    <item android:id="@+id/idSave" android:title="Сохранить получаемые данные"/>
 
 </menu>
