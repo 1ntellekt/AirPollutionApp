@@ -52,13 +52,18 @@ class AirPollutionViewModel(application: Application):AndroidViewModel(applicati
                          city = jsonObject.getString("cityEn")
                      )
 
-                     if(station.city == "Ust-Kamenogorsk") {
-                         if (!station.name.contains("AirKaz") && !station.name.contains("(ручной)"))
+                     if( station.city == "Ust-Kamenogorsk" || station.city == "Semey" || station.city == "Altai"
+                         || station.city == "Village deep" || jsonObject.getString("cityRu") == "Риддер"
+                         || station.city == "Auezov village (Bakyrchik)" || station.city=="Ayagoz" || station.city == "Shemonaikha")
                          {
-                             getComponents(station)
-                                 // listStationFromUrl.add(station)
-                         }
-                     }
+                             if (station.city == "Ust-Kamenogorsk" && !station.name.contains("AirKaz") && !station.name.contains("(ручной)"))
+                             {
+                                 getComponents(station)
+                                     // listStationFromUrl.add(station)
+                             } else if (station.city != "Ust-Kamenogorsk") {
+                                 getComponents(station)
+                             }
+                        }
                  }
 
                  Log.i("tagSize","size: ${listStationFromUrl.size}")

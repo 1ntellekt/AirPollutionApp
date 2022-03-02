@@ -136,7 +136,7 @@ class AirPollutionFragment : Fragment() {
         }
     }
 
-    private fun getDataWithLocal() {
+    private fun getDataWithLocal(){
         initWindByPref()
         binding.tvWind.text = "Скорость ветра: ${WindInstance.speed} Направление(в градусах):${WindInstance.deg} ${getWindName()}"
         mViewModel.getStationLocalDB {
@@ -158,7 +158,7 @@ class AirPollutionFragment : Fragment() {
     }
 
     private fun getDataWithInternet(){
-/*        val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
+        val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
         if (getInitData()== testDate){
             mViewModel.getAllStationsOpenWeather({
                 showToast("Get data from openweather")
@@ -185,7 +185,7 @@ class AirPollutionFragment : Fragment() {
                 },{
                     showToast("Error get from URL response $it!")
                 })
-            } else {*/
+            } else {
                 mViewModel.getAllStationsAPI({
                     showToast("Get data from api")
                     binding.spinnerComponent.apply {
@@ -196,8 +196,8 @@ class AirPollutionFragment : Fragment() {
                 },{
                     showToast("Error get from DB Firebase $it!")
                 })
-         /*  }
-        }*/
+           }
+        }
     }
 
     private fun isNetworkConnected(): Boolean {
