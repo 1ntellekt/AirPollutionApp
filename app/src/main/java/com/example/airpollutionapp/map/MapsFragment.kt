@@ -1,13 +1,16 @@
-package com.example.airpollutionapp
+package com.example.airpollutionapp.map
 
 
 import android.graphics.Color
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProvider
+import com.example.airpollutionapp.*
 import com.example.airpollutionapp.models.Station
 import com.example.airpollutionapp.models.WindInstance
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -22,6 +25,7 @@ import com.google.maps.android.data.geojson.GeoJsonLayer
 import com.google.maps.android.ui.IconGenerator
 import org.json.JSONException
 import java.io.IOException
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.math.PI
 import kotlin.math.cos
@@ -32,6 +36,8 @@ class MapsFragment : Fragment() {
 
     private var listStations:MutableList<Station> = mutableListOf()
     private var componentKey:String? = null
+    private lateinit var mViewModel: MapsViewModel
+    private var isFirstInit = true
 
     private val callback = OnMapReadyCallback { googleMap ->
 
@@ -42,7 +48,7 @@ class MapsFragment : Fragment() {
             drawPolygonOfArea(googleMap, area)
         }
 
-        val centerLatLng = LatLng(48.6130209,81.7489928)
+        val centerLatLng = LatLng(49.9482,82.6280) // Ust-kamenogorsk
 
         val markerManager = MarkerManager(googleMap)
         val circleManager = CircleManager(googleMap)
@@ -54,17 +60,128 @@ class MapsFragment : Fragment() {
 
         val listStationOnMap = mutableListOf<StationOnMap>()
 
-        for (station in listStations) {
+        /*for (station in listStations) {
             listStationOnMap.add(StationOnMap(station))
-        }
+        }*/
 
         googleMap.setOnCameraMoveListener {
             //Log.i("tagC", "Camera move: ${googleMap.projection.visibleRegion.latLngBounds}")
-           // Handler().postDelayed({
                 googleMap.projection.visibleRegion.apply {
                     val polygonOptCamera = PolygonOptions().addAll(listOf(nearLeft, nearRight, farRight, farLeft))
-                    // Handler().postDelayed({
-                    for (stationOnMap in listStationOnMap) {
+                    //Log.i("tag_poly", "${polygonOptCamera.points}")
+
+/*                    val strList = mutableListOf<String>()
+                    polygonOptCamera.points.forEach {
+                        strList.add("\"${it.latitude} ${it.longitude}\"")
+                    }
+                    strList.add(strList[0])
+
+                    val params = mutableMapOf<String,Any>()
+                    params["polygon"] = strList
+
+                    Log.i("tag_poly", JSONObject(params.toString()).toString())*/
+
+
+                    val timeDateStart = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getTimerStart())
+
+                    if (checkTimeInPrefs(timeDateStart, 5,0,0,0)){
+
+                        startTimer(5){
+                            val now  = SimpleDateFormat(datePattern, Locale.getDefault()).format(Date())
+                            setTimerStart(now)
+                            Log.i("timer", "time: $now")
+                            mViewModel.getStationsPolygon(polygonOptCamera, { list ->
+                                if (list.isNotEmpty() && listStationOnMap.isEmpty()){
+                                    list.forEach {
+                                        listStationOnMap.add(StationOnMap(it))
+                                    }
+                                }
+
+                                if (listStationOnMap.isNotEmpty()){
+                                    list.forEach { station ->
+                                        if (!listStationOnMap.map { it.station }.contains(station)){
+                                            listStationOnMap.add(StationOnMap(station))
+                                        }
+                                    }
+                                }
+
+                                Log.i("tag_poly", "get cities | list size:${list.size} cities:${list.map { it.city }}")
+                                Log.i("tag_poly", "list stations size:${listStationOnMap.size} cities ${listStationOnMap.map { it.station.city }}")
+
+
+                                for (stationOnMap in listStationOnMap) {
+                                    val currStation = stationOnMap.station
+                                    val latLngCenter = LatLng(currStation.latitude, currStation.longitude)
+
+                                    if (!containsPointOnCamera(latLngCenter, polygonOptCamera.points)){
+                                        //delete
+                                        if (stationOnMap.status == "add"){
+                                            stationOnMap.apply {
+                                                markerManager.getCollection("marks").remove(marker)
+                                                circle?.let { circleManager.getCollection("circle").remove(it)}
+                                                polygon?.let { polygonManager.getCollection("poly").remove(it)}
+                                                stationOnMap.status = "del"
+                                            }
+                                        }
+                                    } else {
+                                        //add
+                                        if (stationOnMap.status == "no-add" || stationOnMap.status == "del"){
+
+                                            val markerOpt = MarkerOptions().position(latLngCenter)
+                                                .title("${currStation.name} (${currStation.address}) "+
+                                                        "${componentKey?.uppercase(Locale.getDefault())}:${currStation.components[componentKey]}")
+                                            stationOnMap.marker = markerManager.getCollection("marks").addMarker(markerOpt)
+
+                                            stationOnMap.status = "add"
+
+                                            if (WindInstance.speed <= 2) {
+                                                val circleOpt = drawCircle(latLngCenter,currStation)
+                                                stationOnMap.circle = circleManager.getCollection("circle").addCircle(circleOpt)
+                                            }
+                                            else {
+                                                val polyOpt = drawEllipse(latLngCenter,currStation)
+                                                stationOnMap.polygon = polygonManager.getCollection("poly").addPolygon(polyOpt)
+                                            }
+
+                                        }
+                                    }
+                                }
+
+/*                           startTimer({
+                               for (station in list) {
+                                   val latLngCenter = LatLng(station.latitude, station.longitude)
+                                   val markerOpt = MarkerOptions().position(latLngCenter)
+                                       .title("${station.name} (${station.address}) "+
+                                               "${componentKey?.uppercase(Locale.getDefault())}:${station.components[componentKey]}")
+                                   markerManager.getCollection("marks").addMarker(markerOpt)
+
+                                   if (WindInstance.speed <= 2) {
+                                       val circleOpt = drawCircle(latLngCenter,station)
+                                       circleManager.getCollection("circle").addCircle(circleOpt)
+                                   }
+                                   else {
+                                       val polyOpt = drawEllipse(latLngCenter,station)
+                                       polygonManager.getCollection("poly").addPolygon(polyOpt)
+                                   }
+                               }
+                           },
+                            {
+                               markerManager.getCollection("marks").clear()
+                               circleManager.getCollection("circle").clear()
+                               polygonManager.getCollection("poly").clear()
+                           })*/
+
+
+
+                            }, {
+                                showToast(it)
+                            })
+                        }
+
+                    }
+
+
+                    /*                    for (stationOnMap in listStationOnMap) {
                         val currStation = stationOnMap.station
                         val latLngCenter = LatLng(currStation.latitude, currStation.longitude)
 
@@ -100,19 +217,50 @@ class MapsFragment : Fragment() {
 
                             }
                         }
-                    }
+                    }*/
 
                     markerManager.getCollection("marks").showAll()
                     circleManager.getCollection("circle").showAll()
                     polygonManager.getCollection("poly").showAll()
-                    // }, 1000)
                 }
-           // }, 3500)
         }
 
         val latLngBounds = LatLngBounds(LatLng(45.321254,76.245117), LatLng(52.038977,85.979004))
         googleMap.setLatLngBoundsForCameraTarget(latLngBounds)
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centerLatLng,7.0f))
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(centerLatLng,9.0f))
+    }
+
+    private var cTimer:CountDownTimer? = null
+
+    private fun startTimer(timeInMilli:Long, onFinish:()->Unit){
+        cTimer = object : CountDownTimer(timeInMilli,1000) {
+            override fun onTick(millisUntilFinished: Long) {
+
+            }
+            override fun onFinish() {
+                onFinish()
+            }
+        }
+        cTimer?.start()
+    }
+
+    private fun cancelTimer(){
+        cTimer?.cancel()
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        cancelTimer()
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        cancelTimer()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        mViewModel = ViewModelProvider(this).get(MapsViewModel::class.java)
     }
 
     private fun containsPointOnCamera(p: LatLng, points: List<LatLng>): Boolean {
@@ -128,7 +276,7 @@ class MapsFragment : Fragment() {
         val list = arguments?.getSerializable("stations") as MutableList<Station>?
 
         if (list!=null){
-            listStations.addAll(list)
+            //listStations.addAll(list)
            // showToast("${list.size}")
         } else {
             showToast("list on map is null!")
@@ -164,60 +312,60 @@ class MapsFragment : Fragment() {
 
             val  geoJsonLayer:GeoJsonLayer = when(areaName) {
                 "Oskemen" -> {
-                     GeoJsonLayer(googleMap,R.raw.oskemen,context)
+                     GeoJsonLayer(googleMap, R.raw.oskemen,context)
                 }
                 "Semey" -> {
-                    GeoJsonLayer(googleMap,R.raw.semey,context)
+                    GeoJsonLayer(googleMap, R.raw.semey,context)
                 }
                 "Uka" -> {
-                    GeoJsonLayer(googleMap,R.raw.uka,context)
+                    GeoJsonLayer(googleMap, R.raw.uka,context)
                 }
 
                 "Abai" -> {
-                    GeoJsonLayer(googleMap,R.raw.abai,context)
+                    GeoJsonLayer(googleMap, R.raw.abai,context)
                 }
                 "Altai" -> {
-                    GeoJsonLayer(googleMap,R.raw.altai,context)
+                    GeoJsonLayer(googleMap, R.raw.altai,context)
                 }
                 "Ayagoz" -> {
-                    GeoJsonLayer(googleMap,R.raw.ayagoz,context)
+                    GeoJsonLayer(googleMap, R.raw.ayagoz,context)
                 }
                 "Beskara" -> {
-                    GeoJsonLayer(googleMap,R.raw.beskaragai,context)
+                    GeoJsonLayer(googleMap, R.raw.beskaragai,context)
                 }
                 "Borod" -> {
-                    GeoJsonLayer(googleMap,R.raw.borod,context)
+                    GeoJsonLayer(googleMap, R.raw.borod,context)
                 }
                 "Glub" -> {
-                    GeoJsonLayer(googleMap,R.raw.glubokoe,context)
+                    GeoJsonLayer(googleMap, R.raw.glubokoe,context)
                 }
                 "Jarmin" -> {
-                    GeoJsonLayer(googleMap,R.raw.jarmin,context)
+                    GeoJsonLayer(googleMap, R.raw.jarmin,context)
                 }
                 "Katon" -> {
-                    GeoJsonLayer(googleMap,R.raw.katon,context)
+                    GeoJsonLayer(googleMap, R.raw.katon,context)
                 }
                 "Kokpek" -> {
-                    GeoJsonLayer(googleMap,R.raw.kokpekti,context)
+                    GeoJsonLayer(googleMap, R.raw.kokpekti,context)
                 }
                 "Kurshim" -> {
-                    GeoJsonLayer(googleMap,R.raw.kurshim,context)
+                    GeoJsonLayer(googleMap, R.raw.kurshim,context)
                 }
                 "Shaman" -> {
-                    GeoJsonLayer(googleMap,R.raw.shamanai,context)
+                    GeoJsonLayer(googleMap, R.raw.shamanai,context)
                 }
                 "Tarb" -> {
-                    GeoJsonLayer(googleMap,R.raw.tarbagatay,context)
+                    GeoJsonLayer(googleMap, R.raw.tarbagatay,context)
                 }
                 "Ulan" -> {
-                    GeoJsonLayer(googleMap,R.raw.ulan,context)
+                    GeoJsonLayer(googleMap, R.raw.ulan,context)
                 }
                 "Uzhar" -> {
-                    GeoJsonLayer(googleMap,R.raw.uzhar,context)
+                    GeoJsonLayer(googleMap, R.raw.uzhar,context)
                 }
 
                 else -> {
-                    GeoJsonLayer(googleMap,R.raw.oskemen,context)
+                    GeoJsonLayer(googleMap, R.raw.oskemen,context)
                 }
             }
 

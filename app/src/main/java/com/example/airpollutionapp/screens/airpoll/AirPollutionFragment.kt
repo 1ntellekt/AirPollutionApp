@@ -1,7 +1,6 @@
 package com.example.airpollutionapp.screens.airpoll
 
 import android.app.Dialog
-import android.content.Context
 import android.content.Context.CONNECTIVITY_SERVICE
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
@@ -14,8 +13,6 @@ import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.*
 import androidx.appcompat.widget.SwitchCompat
-import androidx.core.content.ContextCompat
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -23,6 +20,7 @@ import com.android.volley.RequestQueue
 import com.android.volley.toolbox.Volley
 import com.example.airpollutionapp.*
 import com.example.airpollutionapp.databinding.FragmentAirPollutionBinding
+import com.example.airpollutionapp.map.MapsFragment
 import com.example.airpollutionapp.models.Station
 import com.example.airpollutionapp.models.WindInstance
 import com.google.android.material.snackbar.Snackbar
@@ -85,7 +83,7 @@ class AirPollutionFragment : Fragment() {
             //showProgressDialog("Loading data (select other $str)...")
             //Handler().postDelayed({
                 Log.i("setFrag", " size list {listener} = ${listStationFromUrl.size}")
-            setArgsToMap(str)
+                setArgsToMap(str)
                // firstDelay -= (firstDelay-300)
             // closeProgressDialog()
             //}, firstDelay.toLong())
@@ -122,7 +120,7 @@ class AirPollutionFragment : Fragment() {
             binding.tvWind.text = "Скорость ветра: ${WindInstance.speed} Направление(в градусах):${WindInstance.deg} ${getWindName()}"
         },{})
 
-        showProgressDialog("Loading data from URL....")
+        //showProgressDialog("Loading data from URL....")
 
         if (isNetworkConnected()) {
             getDataWithInternet()
@@ -153,7 +151,7 @@ class AirPollutionFragment : Fragment() {
     }
 
     private fun getDataWithInternet(){
-        val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
+       /* val timeSavedDate = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getInitData())
         if (getInitData()== testDate){
             mViewModel.getAllStationsOpenWeather({
                 showToast("Get data from openweather")
@@ -180,8 +178,8 @@ class AirPollutionFragment : Fragment() {
                 },{
                     showToast("Error get from URL response $it!")
                 })
-            } else {
-                mViewModel.getAllStationsAPI({
+            } else {*/
+/*                mViewModel.getAllStationsAPI({
                     showToast("Get data from api")
                     binding.spinnerComponent.apply {
                         onItemSelectedListener = spinnerListener
@@ -190,9 +188,13 @@ class AirPollutionFragment : Fragment() {
                     closeProgressDialog()
                 },{
                     showToast("Error get from DB Firebase $it!")
-                })
-           }
+                })*/
+        binding.spinnerComponent.apply {
+            onItemSelectedListener = spinnerListener
+            setSelection(adapterSpinner.count-1)
         }
+           //}
+       // }
     }
 
     private fun isNetworkConnected(): Boolean {
@@ -338,7 +340,7 @@ class AirPollutionFragment : Fragment() {
     }
 
     private fun setArgsToMap(str: String) {
-        if (listStationFromUrl.isNotEmpty()){
+        //if (listStationFromUrl.isNotEmpty()){
             binding.tvTextComponent.visibility = View.VISIBLE
             binding.tvTextComponent.text = getDescriptionPollution(str)
             val bundle = Bundle()
@@ -347,19 +349,9 @@ class AirPollutionFragment : Fragment() {
             //UserInstance.stations.addAll(listStationFromUrl)
            // showToast("set fragment map")
             setFragment(MapsFragment().also { it.arguments = bundle })
-        } else {
-            showToast("not set fragment map, because list is empty!")
-        }
-    }
-
-    private fun checkTimeInPrefs(timeSavedDate: Date): Boolean {
-        val now = Date()
-        val diff = now.time - timeSavedDate.time
-        val seconds = diff / 1000
-        val minutes = seconds / 60
-        val hours = minutes / 60
-        val days = hours / 24
-        return (days >= 0 && minutes >= 0 && hours >= 0 && seconds >= 0)
+       // } else {
+        //    showToast("not set fragment map, because list is empty!")
+       // }
     }
 
     private fun setFragment(fragment: Fragment) {

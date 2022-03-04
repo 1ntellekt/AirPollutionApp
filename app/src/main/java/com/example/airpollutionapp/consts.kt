@@ -7,6 +7,7 @@ import android.widget.Toast
 import com.example.airpollutionapp.models.WindInstance
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.data.geojson.GeoJsonLayer
+import java.util.*
 
 lateinit var APP_ACTIVITY:MainActivity
 lateinit var progressDialog:ProgressDialog
@@ -63,6 +64,23 @@ fun setInitData(time:String){
     edit.apply()
 }
 
+fun setTimerStart(time: String){
+    val editPref = APP_ACTIVITY.getSharedPreferences("data", MODE_PRIVATE).edit()
+    editPref.putString("timer",time)
+    editPref.apply()
+}
+
+ fun checkTimeInPrefs(timeSavedDate: Date, s:Int, m:Int, h:Int, d:Int): Boolean {
+    val now = Date()
+    val diff = now.time - timeSavedDate.time
+    val seconds = diff / 1000
+    val minutes = seconds / 60
+    val hours = minutes / 60
+    val days = hours / 24
+    return (days >= d && minutes >= m && hours >= h && seconds >= s)
+}
+
+fun getTimerStart():String? = APP_ACTIVITY.getSharedPreferences("data", MODE_PRIVATE).getString("timer",testDate)
 
  fun getColorOfPollution(mapComponents:MutableMap<String,Double>) :MutableMap<String,String> {
 
