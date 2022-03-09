@@ -39,6 +39,8 @@ class AirPollutionFragment : Fragment() {
     private val listStationFromUrl = mutableListOf<Station>()
     private lateinit var mObserver: Observer<List<Station>>
 
+    private var isLocal = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         arguments?.let {
@@ -130,6 +132,7 @@ class AirPollutionFragment : Fragment() {
     }
 
     private fun getDataWithLocal(){
+        isLocal = true
         initWindByPref()
         binding.tvWind.text = "Скорость ветра: ${WindInstance.speed} Направление(в градусах):${WindInstance.deg} ${getWindName()}"
         mViewModel.getStationLocalDB {
@@ -179,20 +182,16 @@ class AirPollutionFragment : Fragment() {
                     showToast("Error get from URL response $it!")
                 })
             } else {*/
-/*                mViewModel.getAllStationsAPI({
-                    showToast("Get data from api")
+                mViewModel.getAllStationsAPI({
+                    //showToast("Get data from api")
                     binding.spinnerComponent.apply {
                         onItemSelectedListener = spinnerListener
                         setSelection(adapterSpinner.count-1)
                     }
                     closeProgressDialog()
                 },{
-                    showToast("Error get from DB Firebase $it!")
-                })*/
-        binding.spinnerComponent.apply {
-            onItemSelectedListener = spinnerListener
-            setSelection(adapterSpinner.count-1)
-        }
+                    showToast("Error get from DB API $it!")
+                })
            //}
        // }
     }
@@ -340,18 +339,31 @@ class AirPollutionFragment : Fragment() {
     }
 
     private fun setArgsToMap(str: String) {
-        //if (listStationFromUrl.isNotEmpty()){
+        if (isLocal){
+            if (listStationFromUrl.isNotEmpty()){
+                binding.tvTextComponent.visibility = View.VISIBLE
+                binding.tvTextComponent.text = getDescriptionPollution(str)
+                val bundle = Bundle()
+                bundle.putString("component", str)
+                bundle.putBoolean("isLocal", isLocal)
+                bundle.putSerializable("stations",listStationFromUrl as Serializable)
+                //UserInstance.stations.addAll(listStationFromUrl)
+                // showToast("set fragment map")
+                setFragment(MapsFragment().also { it.arguments = bundle })
+            } else {
+                showToast("not set fragment map, because list is empty!")
+            }
+        } else {
             binding.tvTextComponent.visibility = View.VISIBLE
             binding.tvTextComponent.text = getDescriptionPollution(str)
             val bundle = Bundle()
             bundle.putString("component", str)
-            bundle.putSerializable("stations",listStationFromUrl as Serializable)
+            bundle.putBoolean("isLocal", isLocal)
+           // bundle.putSerializable("stations",listStationFromUrl as Serializable)
             //UserInstance.stations.addAll(listStationFromUrl)
-           // showToast("set fragment map")
+            // showToast("set fragment map")
             setFragment(MapsFragment().also { it.arguments = bundle })
-       // } else {
-        //    showToast("not set fragment map, because list is empty!")
-       // }
+        }
     }
 
     private fun setFragment(fragment: Fragment) {

@@ -37,7 +37,7 @@ class MapsFragment : Fragment() {
     private var listStations:MutableList<Station> = mutableListOf()
     private var componentKey:String? = null
     private lateinit var mViewModel: MapsViewModel
-    private var isFirstInit = true
+    private var isLocal = false
 
     private val callback = OnMapReadyCallback { googleMap ->
 
@@ -60,9 +60,10 @@ class MapsFragment : Fragment() {
 
         val listStationOnMap = mutableListOf<StationOnMap>()
 
-        /*for (station in listStations) {
+        if (isLocal)
+        for (station in listStations) {
             listStationOnMap.add(StationOnMap(station))
-        }*/
+        }
 
         googleMap.setOnCameraMoveListener {
             //Log.i("tagC", "Camera move: ${googleMap.projection.visibleRegion.latLngBounds}")
@@ -81,105 +82,118 @@ class MapsFragment : Fragment() {
 
                     Log.i("tag_poly", JSONObject(params.toString()).toString())*/
 
+                    if (isLocal){
+                        for (stationOnMap in listStationOnMap) {
+                            val currStation = stationOnMap.station
+                            val latLngCenter = LatLng(currStation.latitude, currStation.longitude)
 
-                    val timeDateStart = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getTimerStart())
-
-                    if (checkTimeInPrefs(timeDateStart, 5,0,0,0)){
-
-                        startTimer(5){
-                            val now  = SimpleDateFormat(datePattern, Locale.getDefault()).format(Date())
-                            setTimerStart(now)
-                            Log.i("timer", "time: $now")
-                            mViewModel.getStationsPolygon(polygonOptCamera, { list ->
-                                if (list.isNotEmpty() && listStationOnMap.isEmpty()){
-                                    list.forEach {
-                                        listStationOnMap.add(StationOnMap(it))
+                            if (!containsPointOnCamera(latLngCenter, polygonOptCamera.points)){
+                                //delete
+                                if (stationOnMap.status == "add"){
+                                    stationOnMap.apply {
+                                        markerManager.getCollection("marks").remove(marker)
+                                        circle?.let { circleManager.getCollection("circle").remove(it)}
+                                        polygon?.let { polygonManager.getCollection("poly").remove(it)}
+                                        stationOnMap.status = "del"
                                     }
                                 }
+                            } else {
+                                //add
+                                if (stationOnMap.status == "no-add" || stationOnMap.status == "del"){
 
-                                if (listStationOnMap.isNotEmpty()){
-                                    list.forEach { station ->
-                                        if (!listStationOnMap.map { it.station }.contains(station)){
-                                            listStationOnMap.add(StationOnMap(station))
-                                        }
+                                    val markerOpt = MarkerOptions().position(latLngCenter)
+                                        .title("${currStation.name} (${currStation.address}) "+
+                                                "${componentKey?.uppercase(Locale.getDefault())}:${currStation.components[componentKey]}")
+                                    stationOnMap.marker = markerManager.getCollection("marks").addMarker(markerOpt)
+
+                                    stationOnMap.status = "add"
+
+                                    if (WindInstance.speed <= 2) {
+                                        val circleOpt = drawCircle(latLngCenter,currStation)
+                                        stationOnMap.circle = circleManager.getCollection("circle").addCircle(circleOpt)
                                     }
-                                }
-
-                                Log.i("tag_poly", "get cities | list size:${list.size} cities:${list.map { it.city }}")
-                                Log.i("tag_poly", "list stations size:${listStationOnMap.size} cities ${listStationOnMap.map { it.station.city }}")
-
-
-                                for (stationOnMap in listStationOnMap) {
-                                    val currStation = stationOnMap.station
-                                    val latLngCenter = LatLng(currStation.latitude, currStation.longitude)
-
-                                    if (!containsPointOnCamera(latLngCenter, polygonOptCamera.points)){
-                                        //delete
-                                        if (stationOnMap.status == "add"){
-                                            stationOnMap.apply {
-                                                markerManager.getCollection("marks").remove(marker)
-                                                circle?.let { circleManager.getCollection("circle").remove(it)}
-                                                polygon?.let { polygonManager.getCollection("poly").remove(it)}
-                                                stationOnMap.status = "del"
-                                            }
-                                        }
-                                    } else {
-                                        //add
-                                        if (stationOnMap.status == "no-add" || stationOnMap.status == "del"){
-
-                                            val markerOpt = MarkerOptions().position(latLngCenter)
-                                                .title("${currStation.name} (${currStation.address}) "+
-                                                        "${componentKey?.uppercase(Locale.getDefault())}:${currStation.components[componentKey]}")
-                                            stationOnMap.marker = markerManager.getCollection("marks").addMarker(markerOpt)
-
-                                            stationOnMap.status = "add"
-
-                                            if (WindInstance.speed <= 2) {
-                                                val circleOpt = drawCircle(latLngCenter,currStation)
-                                                stationOnMap.circle = circleManager.getCollection("circle").addCircle(circleOpt)
-                                            }
-                                            else {
-                                                val polyOpt = drawEllipse(latLngCenter,currStation)
-                                                stationOnMap.polygon = polygonManager.getCollection("poly").addPolygon(polyOpt)
-                                            }
-
-                                        }
+                                    else {
+                                        val polyOpt = drawEllipse(latLngCenter,currStation)
+                                        stationOnMap.polygon = polygonManager.getCollection("poly").addPolygon(polyOpt)
                                     }
+
                                 }
-
-/*                           startTimer({
-                               for (station in list) {
-                                   val latLngCenter = LatLng(station.latitude, station.longitude)
-                                   val markerOpt = MarkerOptions().position(latLngCenter)
-                                       .title("${station.name} (${station.address}) "+
-                                               "${componentKey?.uppercase(Locale.getDefault())}:${station.components[componentKey]}")
-                                   markerManager.getCollection("marks").addMarker(markerOpt)
-
-                                   if (WindInstance.speed <= 2) {
-                                       val circleOpt = drawCircle(latLngCenter,station)
-                                       circleManager.getCollection("circle").addCircle(circleOpt)
-                                   }
-                                   else {
-                                       val polyOpt = drawEllipse(latLngCenter,station)
-                                       polygonManager.getCollection("poly").addPolygon(polyOpt)
-                                   }
-                               }
-                           },
-                            {
-                               markerManager.getCollection("marks").clear()
-                               circleManager.getCollection("circle").clear()
-                               polygonManager.getCollection("poly").clear()
-                           })*/
-
-
-
-                            }, {
-                                showToast(it)
-                            })
+                            }
                         }
-
                     }
+                    else {
+                        val timeDateStart = SimpleDateFormat(datePattern, Locale.getDefault()).parse(getTimerStart())
 
+                        if (checkTimeInPrefs(timeDateStart, 8,0,0,0)){
+
+                            startTimer(5){
+                                val now  = SimpleDateFormat(datePattern, Locale.getDefault()).format(Date())
+                                setTimerStart(now)
+                                Log.i("timer", "time: $now")
+                                mViewModel.getStationsPolygon(polygonOptCamera, { list ->
+                                    if (list.isNotEmpty() && listStationOnMap.isEmpty()){
+                                        list.forEach {
+                                            listStationOnMap.add(StationOnMap(it))
+                                        }
+                                    }
+
+                                    if (listStationOnMap.isNotEmpty()){
+                                        list.forEach { station ->
+                                            if (!listStationOnMap.map { it.station }.contains(station)){
+                                                listStationOnMap.add(StationOnMap(station))
+                                            }
+                                        }
+                                    }
+
+                                    Log.i("tag_poly", "get cities | list size:${list.size} cities:${list.map { it.city }}")
+                                    Log.i("tag_poly", "list stations size:${listStationOnMap.size} cities ${listStationOnMap.map { it.station.city }}")
+
+
+                                    for (stationOnMap in listStationOnMap) {
+                                        val currStation = stationOnMap.station
+                                        val latLngCenter = LatLng(currStation.latitude, currStation.longitude)
+
+                                        if (!containsPointOnCamera(latLngCenter, polygonOptCamera.points)){
+                                            //delete
+                                            if (stationOnMap.status == "add"){
+                                                stationOnMap.apply {
+                                                    markerManager.getCollection("marks").remove(marker)
+                                                    circle?.let { circleManager.getCollection("circle").remove(it)}
+                                                    polygon?.let { polygonManager.getCollection("poly").remove(it)}
+                                                    stationOnMap.status = "del"
+                                                }
+                                            }
+                                        } else {
+                                            //add
+                                            if (stationOnMap.status == "no-add" || stationOnMap.status == "del"){
+
+                                                val markerOpt = MarkerOptions().position(latLngCenter)
+                                                    .title("${currStation.name} (${currStation.address}) "+
+                                                            "${componentKey?.uppercase(Locale.getDefault())}:${currStation.components[componentKey]}")
+                                                stationOnMap.marker = markerManager.getCollection("marks").addMarker(markerOpt)
+
+                                                stationOnMap.status = "add"
+
+                                                if (WindInstance.speed <= 2) {
+                                                    val circleOpt = drawCircle(latLngCenter,currStation)
+                                                    stationOnMap.circle = circleManager.getCollection("circle").addCircle(circleOpt)
+                                                }
+                                                else {
+                                                    val polyOpt = drawEllipse(latLngCenter,currStation)
+                                                    stationOnMap.polygon = polygonManager.getCollection("poly").addPolygon(polyOpt)
+                                                }
+
+                                            }
+                                        }
+                                    }
+
+                                }, {
+                                    showToast(it)
+                                })
+                            }
+
+                        }
+                    }
 
                     /*                    for (stationOnMap in listStationOnMap) {
                         val currStation = stationOnMap.station
@@ -273,10 +287,12 @@ class MapsFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         componentKey = arguments?.getString("component")
+        isLocal = arguments?.getBoolean("isLocal") ?: true
         val list = arguments?.getSerializable("stations") as MutableList<Station>?
 
+        if (isLocal)
         if (list!=null){
-            //listStations.addAll(list)
+            listStations.addAll(list)
            // showToast("${list.size}")
         } else {
             showToast("list on map is null!")
