@@ -514,10 +514,8 @@ class MapsFragment : Fragment() {
                 }
 
             //Log.i("tagEllipse", "i:$i lat:${centerLatLng.latitude} lon:${centerLatLng.longitude}")
-
             //googleMap.addMarker(MarkerOptions().position(LatLng(pLat,pLon)).title("lat:${abs(point.latitude-pLat)} lon:${abs(point.longitude-pLon)}"))
             //googleMap.addMarker(MarkerOptions().position(LatLng(pLat,pLon)).title("${LatLng(pLat,pLon)}"))
-
             options.add(
                 LatLng(pLat,pLon)
             )
